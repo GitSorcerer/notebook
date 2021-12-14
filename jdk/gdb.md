@@ -54,3 +54,13 @@ classes>javah com.gaoh.jdk.thread.MyThread
 gcc -fPIC -I /resources/openjdk/jdk/build/linux-x86_64-normal-server-slowdebug/jdk/include -I /resources/openjdk/jdk/build/linux-x86_64-normal-server-slowdebug/jdk/include/linux -shared -o LibMyThreadNative.so mythread.c
 ```
 
+
+
+软连接
+
+```shell
+ln -s /resources/openjdk/jdk/build/linux-x86_64-normal-server-slowdebug/jdk/bin/java /usr/bin/java
+
+ln -s /resources/openjdk/jdk/build/linux-x86_64-normal-server-slowdebug/jdk/bin/javac /usr/bin/javac
+```
+
