@@ -44,6 +44,10 @@ gcc mythread.c -o mythread.out -pthread
 
 
 
+
+
+classes>javah com.gaoh.jdk.thread.MyThread
+
 打包成库文件
 
 ```shell
