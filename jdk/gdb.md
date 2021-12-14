@@ -24,3 +24,29 @@ gdb$:finish #结束当前方法
 gdb$:info threads #查看线程
 ```
 
+
+
+man pthread_create
+
+```shell
+yum install man-pages libstdc++-docs
+```
+
+
+
+
+
+执行c
+
+```shell
+gcc mythread.c -o mythread.out -pthread
+```
+
+
+
+打包成库文件
+
+```shell
+gcc -fPIC -I /resources/openjdk/jdk/build/linux-x86_64-normal-server-slowdebug/jdk/include -I /resources/openjdk/jdk/build/linux-x86_64-normal-server-slowdebug/jdk/include/linux -shared -o LibMyThreadNative.so mythread.c
+```
+
