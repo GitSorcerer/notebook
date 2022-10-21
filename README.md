@@ -1,6 +1,8 @@
 # JDK
 
-## 编译jdk8
+## 调试编译
+
+### 编译jdk8
 
 ```shell
 yum -y install gcc gcc-c++ kernel-devel
@@ -38,7 +40,7 @@ make all CONF=linux-x86_64-normal-server-slowdebug ZIP_DEBUGINFO_FILES=0
 
 
 
-## 移除yum安装的jdk
+### 移除yum安装的jdk
 
 
 
@@ -54,7 +56,7 @@ java-1.6.0-openjdk-1.6.0.0-1.7.b09.el5
 rpm -e --nodeps java-1.4.2-gcj-compat-1.4.2.0-40jpp.115
 rpm -e --nodeps java-1.6.0-openjdk-1.6.0.0-1.7.b09.el5
 
-## gdb调试
+### gdb调试
 
 ```java
 public class ThreadTest {
@@ -100,4 +102,18 @@ git commit -m "first commit"
 git remote add origin https://gitee.com/gaohwh/notebook.git
 git push -u origin master
 ```
+
+## 问题
+
+#### 1.cas修改owner返回值问题
+
+objectMonitor.cpp中332行
+
+ObjectMonitor::enter方法中，在使用CAS修改owner指向的时候返回的是 **NULL** 和  **当前线程Self** 还会是什么
+
+Atomic::cmpxchg_ptr (Self, &_owner, NULL)
+
+#### 2.synchronizer.cpp创建monitor对象先后问题
+
+1250行创建monitor对象为什么不放在cas成功之后
 
