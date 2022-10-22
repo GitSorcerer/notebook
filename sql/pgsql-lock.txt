@@ -1,0 +1,315 @@
+select pid from pg_locks where relation=(select oid from pg_class where relname='water_meter');
+-- 取消或者终止对应的进程破坏死锁条件
+select pg_cancel_backend(pid);
+select pg_terminate_backend(pid);
+
+死锁产生原因 表册之前移动有一个开启了事务 一个没开启(或者都开启) 互相修改了同一条数据 导致死锁
+
+
+
+org.springframework.dao.DeadlockLoserDataAccessException: 
+### Error updating database.  Cause: org.postgresql.util.PSQLException: ERROR: deadlock detected
+  Detail: Process 751602 waits for ShareLock on transaction 1184699; blocked by process 702174.
+Process 702174 waits for ShareLock on transaction 1184700; blocked by process 751602.
+  Hint: See server log for query details.
+  Where: while updating tuple (1,10) in relation "water_meter"
+### The error may exist in com/waternue/watermeter/infrastructure/persistence/mapper/MeterMapper.java (best guess)
+### The error may involve com.waternue.watermeter.infrastructure.persistence.mapper.MeterMapper.update-Inline
+### The error occurred while setting parameters
+### SQL: UPDATE water_meter SET meter_order = ?, mb_code = ? WHERE water_meter.tenant_id = '001' AND (mb_code = ?)
+### Cause: org.postgresql.util.PSQLException: ERROR: deadlock detected
+  Detail: Process 751602 waits for ShareLock on transaction 1184699; blocked by process 702174.
+Process 702174 waits for ShareLock on transaction 1184700; blocked by process 751602.
+  Hint: See server log for query details.
+  Where: while updating tuple (1,10) in relation "water_meter"
+; ERROR: deadlock detected
+  Detail: Process 751602 waits for ShareLock on transaction 1184699; blocked by process 702174.
+Process 702174 waits for ShareLock on transaction 1184700; blocked by process 751602.
+  Hint: See server log for query details.
+  Where: while updating tuple (1,10) in relation "water_meter"; nested exception is org.postgresql.util.PSQLException: ERROR: deadlock detected
+  Detail: Process 751602 waits for ShareLock on transaction 1184699; blocked by process 702174.
+Process 702174 waits for ShareLock on transaction 1184700; blocked by process 751602.
+  Hint: See server log for query details.
+  Where: while updating tuple (1,10) in relation "water_meter"
+        at org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator.doTranslate(SQLErrorCodeSQLExceptionTranslator.java:267)
+        at org.springframework.jdbc.support.AbstractFallbackSQLExceptionTranslator.translate(AbstractFallbackSQLExceptionTranslator.java:72)
+        at org.mybatis.spring.MyBatisExceptionTranslator.translateExceptionIfPossible(MyBatisExceptionTranslator.java:91)
+        at org.mybatis.spring.SqlSessionTemplate$SqlSessionInterceptor.invoke(SqlSessionTemplate.java:441)
+        at com.sun.proxy.$Proxy169.update(Unknown Source)
+        at org.mybatis.spring.SqlSessionTemplate.update(SqlSessionTemplate.java:288)
+        at com.baomidou.mybatisplus.core.override.MybatisMapperMethod.execute(MybatisMapperMethod.java:64)
+        at com.baomidou.mybatisplus.core.override.MybatisMapperProxy$PlainMethodInvoker.invoke(MybatisMapperProxy.java:148)
+        at com.baomidou.mybatisplus.core.override.MybatisMapperProxy.invoke(MybatisMapperProxy.java:89)
+        at com.sun.proxy.$Proxy179.update(Unknown Source)
+        at com.baomidou.mybatisplus.extension.service.IService.update(IService.java:258)
+        at com.wpg.framework.core.base.DefaultService.update(DefaultService.java:291)
+        at com.wpg.framework.core.base.DefaultService.update(DefaultService.java:38)
+        at com.baomidou.mybatisplus.extension.service.IService.update(IService.java:248)
+        at com.baomidou.mybatisplus.extension.service.IService$$FastClassBySpringCGLIB$$f8525d18.invoke(<generated>)
+        at org.springframework.cglib.proxy.MethodProxy.invoke(MethodProxy.java:218)
+        at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.invokeJoinpoint(CglibAopProxy.java:752)
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163)
+        at org.springframework.dao.support.PersistenceExceptionTranslationInterceptor.invoke(PersistenceExceptionTranslationInterceptor.java:139)
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:186)
+        at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:691)
+        at com.waternue.watermeter.infrastructure.persistence.repository.MeterRepositoryImpl$$EnhancerBySpringCGLIB$$f41fafa0.update(<generated>)
+        at com.waternue.watermeter.application.service.MeterBookService.meterBookOut(MeterBookService.java:552)
+        at com.waternue.watermeter.application.service.MeterBookService.meterBookChange(MeterBookService.java:469)
+        at com.waternue.watermeter.application.service.MeterBookService$$FastClassBySpringCGLIB$$2f34afdc.invoke(<generated>)
+        at org.springframework.cglib.proxy.MethodProxy.invoke(MethodProxy.java:218)
+        at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.invokeJoinpoint(CglibAopProxy.java:752)
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163)
+        at org.springframework.transaction.interceptor.TransactionAspectSupport.invokeWithinTransaction(TransactionAspectSupport.java:295)
+        at org.springframework.transaction.interceptor.TransactionInterceptor.invoke(TransactionInterceptor.java:98)
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:186)
+        at org.springframework.aop.interceptor.ExposeInvocationInterceptor.invoke(ExposeInvocationInterceptor.java:93)
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:186)
+        at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:691)
+        at com.waternue.watermeter.application.service.MeterBookService$$EnhancerBySpringCGLIB$$89aaaa9.meterBookChange(<generated>)
+        at com.waternue.watermeter.controller.MeterBookController.bookChange(MeterBookController.java:195)
+        at com.waternue.watermeter.controller.MeterBookController$$FastClassBySpringCGLIB$$7e2afdde.invoke(<generated>)
+        at org.springframework.cglib.proxy.MethodProxy.invoke(MethodProxy.java:218)
+        at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.invokeJoinpoint(CglibAopProxy.java:752)
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163)
+        at org.springframework.aop.aspectj.MethodInvocationProceedingJoinPoint.proceed(MethodInvocationProceedingJoinPoint.java:88)
+        at com.wpg.tools.log.aspect.AuditLogAspect.doAround(AuditLogAspect.java:84)
+        at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+        at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+        at java.lang.reflect.Method.invoke(Method.java:498)
+        at org.springframework.aop.aspectj.AbstractAspectJAdvice.invokeAdviceMethodWithGivenArgs(AbstractAspectJAdvice.java:644)
+        at org.springframework.aop.aspectj.AbstractAspectJAdvice.invokeAdviceMethod(AbstractAspectJAdvice.java:633)
+        at org.springframework.aop.aspectj.AspectJAroundAdvice.invoke(AspectJAroundAdvice.java:70)
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:175)
+        at org.springframework.aop.aspectj.MethodInvocationProceedingJoinPoint.proceed(MethodInvocationProceedingJoinPoint.java:100)
+        at com.wpg.framework.core.auth.AuthCheckAspect.doAuth(AuthCheckAspect.java:116)
+        at sun.reflect.GeneratedMethodAccessor367.invoke(Unknown Source)
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+        at java.lang.reflect.Method.invoke(Method.java:498)
+        at org.springframework.aop.aspectj.AbstractAspectJAdvice.invokeAdviceMethodWithGivenArgs(AbstractAspectJAdvice.java:644)
+        at org.springframework.aop.aspectj.AbstractAspectJAdvice.invokeAdviceMethod(AbstractAspectJAdvice.java:633)
+        at org.springframework.aop.aspectj.AspectJAroundAdvice.invoke(AspectJAroundAdvice.java:70)
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:175)
+        at org.springframework.aop.interceptor.ExposeInvocationInterceptor.invoke(ExposeInvocationInterceptor.java:93)
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:186)
+        at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:691)
+        at com.waternue.watermeter.controller.MeterBookController$$EnhancerBySpringCGLIB$$9042ae0.bookChange(<generated>)
+        at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+        at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+        at java.lang.reflect.Method.invoke(Method.java:498)
+        at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:190)
+        at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:138)
+        at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:105)
+        at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:893)
+        at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:798)
+        at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87)
+        at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1040)
+        at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:943)
+        at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1006)
+        at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:909)
+        at javax.servlet.http.HttpServlet.service(HttpServlet.java:660)
+        at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:883)
+        at javax.servlet.http.HttpServlet.service(HttpServlet.java:741)
+        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:231)
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166)
+        at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:53)
+        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:193)
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166)
+        at com.github.xiaoymin.knife4j.spring.filter.ProductionSecurityFilter.doFilter(ProductionSecurityFilter.java:53)
+        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:193)
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166)
+        at com.github.xiaoymin.knife4j.spring.filter.SecurityBasicAuthFilter.doFilter(SecurityBasicAuthFilter.java:90)
+        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:193)
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166)
+        at org.springframework.boot.actuate.web.trace.servlet.HttpTraceFilter.doFilterInternal(HttpTraceFilter.java:88)
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:119)
+        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:193)
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166)
+        at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:119)
+        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:193)
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166)
+        at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:119)
+        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:193)
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166)
+        at org.springframework.web.filter.HiddenHttpMethodFilter.doFilterInternal(HiddenHttpMethodFilter.java:94)
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:119)
+        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:193)
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166)
+        at org.springframework.boot.actuate.metrics.web.servlet.WebMvcMetricsFilter.filterAndRecordMetrics(WebMvcMetricsFilter.java:114)
+        at org.springframework.boot.actuate.metrics.web.servlet.WebMvcMetricsFilter.doFilterInternal(WebMvcMetricsFilter.java:104)
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:119)
+        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:193)
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166)
+        at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201)
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:119)
+        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:193)
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:166)
+        at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:202)
+        at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:96)
+        at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:541)
+        at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:139)
+        at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:92)
+        at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74)
+        at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:343)
+        at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:373)
+        at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:65)
+        at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:868)
+        at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1590)
+        at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:49)
+        at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)
+        at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+        at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:61)
+        at java.lang.Thread.run(Thread.java:750)
+Caused by: org.postgresql.util.PSQLException: ERROR: deadlock detected
+  Detail: Process 751602 waits for ShareLock on transaction 1184699; blocked by process 702174.
+Process 702174 waits for ShareLock on transaction 1184700; blocked by process 751602.
+  Hint: See server log for query details.
+  Where: while updating tuple (1,10) in relation "water_meter"
+        at org.postgresql.core.v3.QueryExecutorImpl.receiveErrorResponse(QueryExecutorImpl.java:2676)
+        at org.postgresql.core.v3.QueryExecutorImpl.processResults(QueryExecutorImpl.java:2366)
+        at org.postgresql.core.v3.QueryExecutorImpl.execute(QueryExecutorImpl.java:356)
+        at org.postgresql.jdbc.PgStatement.executeInternal(PgStatement.java:496)
+        at org.postgresql.jdbc.PgStatement.execute(PgStatement.java:413)
+        at org.postgresql.jdbc.PgPreparedStatement.executeWithFlags(PgPreparedStatement.java:190)
+        at org.postgresql.jdbc.PgPreparedStatement.execute(PgPreparedStatement.java:177)
+        at com.alibaba.druid.pool.DruidPooledPreparedStatement.execute(DruidPooledPreparedStatement.java:497)
+        at sun.reflect.GeneratedMethodAccessor237.invoke(Unknown Source)
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+        at java.lang.reflect.Method.invoke(Method.java:498)
+        at org.apache.ibatis.logging.jdbc.PreparedStatementLogger.invoke(PreparedStatementLogger.java:59)
+        at com.sun.proxy.$Proxy449.execute(Unknown Source)
+        at org.apache.ibatis.executor.statement.PreparedStatementHandler.update(PreparedStatementHandler.java:47)
+        at org.apache.ibatis.executor.statement.RoutingStatementHandler.update(RoutingStatementHandler.java:74)
+        at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+        at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+        at java.lang.reflect.Method.invoke(Method.java:498)
+        at org.apache.ibatis.plugin.Plugin.invoke(Plugin.java:64)
+        at com.sun.proxy.$Proxy447.update(Unknown Source)
+        at org.apache.ibatis.executor.SimpleExecutor.doUpdate(SimpleExecutor.java:50)
+        at org.apache.ibatis.executor.BaseExecutor.update(BaseExecutor.java:117)
+        at org.apache.ibatis.executor.CachingExecutor.update(CachingExecutor.java:76)
+        at sun.reflect.GeneratedMethodAccessor955.invoke(Unknown Source)
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+        at java.lang.reflect.Method.invoke(Method.java:498)
+        at org.apache.ibatis.plugin.Invocation.proceed(Invocation.java:49)
+        at com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor.intercept(MybatisPlusInterceptor.java:106)
+        at org.apache.ibatis.plugin.Plugin.invoke(Plugin.java:62)
+        at com.sun.proxy.$Proxy446.update(Unknown Source)
+        at org.apache.ibatis.session.defaults.DefaultSqlSession.update(DefaultSqlSession.java:194)
+        at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+        at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+        at java.lang.reflect.Method.invoke(Method.java:498)
+        at org.mybatis.spring.SqlSessionTemplate$SqlSessionInterceptor.invoke(SqlSessionTemplate.java:427)
+        ... 128 common frames omitted
+		
+		
+正常：		
+{
+  "outItems": [
+    {
+      "index": 1,
+      "meterCode": "100000207"
+    },
+    {
+      "index": 2,
+      "meterCode": "100000219"
+    }
+  ],
+  "outMbCode": "GH000001",
+  "changeItems": [
+    {
+      "index": 1,
+      "meterCode": "100000204"
+    },
+    {
+      "index": 2,
+      "meterCode": "100000211"
+    },
+    {
+      "index": 3,
+      "meterCode": "100000170"
+    },
+    {
+      "index": 4,
+      "meterCode": "100000213"
+    },
+    {
+      "index": 5,
+      "meterCode": "100000203"
+    },
+    {
+      "index": 6,
+      "meterCode": "100000212"
+    }
+  ],
+  "inMbCode": "GH0001",
+  "validate": true
+}
+
+
+死锁
+{
+  "outItems": [
+    {
+      "index": 1,
+      "meterCode": "100000188"
+    },
+    {
+      "index": 2,
+      "meterCode": "100000196"
+    },
+    {
+      "index": 3,
+      "meterCode": "100000217"
+    },
+    {
+      "index": 4,
+      "meterCode": "100000212"
+    },
+    {
+      "index": 5,
+      "meterCode": "100000187"
+    },
+    {
+      "index": 6,
+      "meterCode": "100000170"
+    },
+    {
+      "index": 7,
+      "meterCode": "100000203"
+    },
+    {
+      "index": 8,
+      "meterCode": "100000219"
+    },
+    {
+      "index": 9,
+      "meterCode": "100000222"
+    },
+    {
+      "index": 10,
+      "meterCode": "100000211"
+    },
+    {
+      "index": 11,
+      "meterCode": "100000204"
+    },
+    {
+      "index": 12,
+      "meterCode": "100000213"
+    },
+    {
+      "index": 13,
+      "meterCode": "100000207"
+    }
+  ],
+  "outMbCode": "GH000001",
+  "changeItems": [],
+  "inMbCode": "GH0001",
+  "validate": true
+}
