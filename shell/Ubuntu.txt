@@ -1,0 +1,99 @@
+deb http://mirrors.aliyun.com/ubuntu/ jammy main restricted
+deb http://mirrors.aliyun.com/ubuntu/ jammy-updates main restricted   
+deb http://mirrors.aliyun.com/ubuntu/ jammy universe
+deb http://mirrors.aliyun.com/ubuntu/ jammy-updates universe
+deb http://mirrors.aliyun.com/ubuntu/ jammy multiverse
+deb http://mirrors.aliyun.com/ubuntu/ jammy-updates multiverse
+deb http://mirrors.aliyun.com/ubuntu/ jammy-backports main restricted universe multiverse
+deb http://mirrors.aliyun.com/ubuntu/ jammy-security main restricted
+deb http://mirrors.aliyun.com/ubuntu/ jammy-security universe
+deb http://mirrors.aliyun.com/ubuntu/ jammy-security multiverse
+
+1:C 28 Sep 2022 05:34:18.988 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+1:C 28 Sep 2022 05:34:18.989 # Redis version=7.0.5, bits=64, commit=00000000, modified=0, pid=1, just started
+1:C 28 Sep 2022 05:34:18.989 # Configuration loaded
+1:M 28 Sep 2022 05:34:18.989 * monotonic clock: POSIX clock_gettime
+1:M 28 Sep 2022 05:34:18.991 * Running mode=standalone, port=6379.
+1:M 28 Sep 2022 05:34:18.991 # Server initialized
+1:M 28 Sep 2022 05:34:18.991 # WARNING overcommit_memory is set to 0! Background save may fail under low memory condition. To fix this issue add 'vm.overcommit_memory = 1' to /etc/sysctl.conf and then reboot or run the command 'sysctl vm.overcommit_memory=1' for this to take effect.
+1:M 28 Sep 2022 05:34:18.991 * Ready to accept connections
+
+deb http://mirrors.aliyun.com/ubuntu/ bionic main restricted
+deb http://mirrors.aliyun.com/ubuntu/ bionic-updates main restricted
+
+deb http://mirrors.aliyun.com/ubuntu/ bionic universe
+deb http://mirrors.aliyun.com/ubuntu/ bionic-updates universe
+
+deb http://mirrors.aliyun.com/ubuntu/ bionic multiverse
+deb http://mirrors.aliyun.com/ubuntu/ bionic-updates multiverse
+deb http://mirrors.aliyun.com/ubuntu/ bionic-backports main restricted universe multiverse
+
+deb http://mirrors.aliyun.com/ubuntu/ bionic-security main restricted
+deb http://mirrors.aliyun.com/ubuntu/ bionic-security universe
+deb http://mirrors.aliyun.com/ubuntu/ bionic-security multiverse
+
+apt install build-essential
+
+apt install \
+        libx11-dev \
+        libxext-dev \
+        libxrender-dev \
+        libxtst-dev \
+        libxt-dev \
+        libcups2-dev \
+        libfreetype6-dev \
+        libasound2-dev \
+        libfontconfig1-dev
+		
+apt-get install ccache
+##设置configure执行权限 
+chmod +x configure
+##设置编译参数 
+export LANG=C 
+export USE_PRECOMPILED_HEADER=true 
+unset JAVA_HOME 
+unset CLASSPATH 
+unset JAVA_TOOL_OPTIONS 
+##configure检查（注意前导jdk7必须提前安装）
+
+./configure --with-target-bits=64 --with-boot-jdk=/resources/jdk1.7.0_80 --with-debug-level=slowdebug --enable-debug-symbols ZIP_DEBUGINFO_FILES=0
+
+*** This OS is not supported: Linux PF2Y4P1T 5.10.16.3-microsoft-standard-WSL2 #1 SMP Fri Apr 2 22:23:49 UTC 2021 x86_64 x86_64 x86_64 GNU/Linux
+gmake[5]: *** [/resources/openjdk-jdk8/hotspot/make/linux/Makefile:234: check_os_version] Error 1
+gmake[4]: *** [/resources/openjdk-jdk8/hotspot/make/linux/Makefile:255: linux_amd64_compiler2/fastdebug] Error 2
+gmake[3]: *** [Makefile:217: generic_build2] Error 2
+gmake[2]: *** [Makefile:167: debug] Error 2
+gmake[1]: *** [HotspotWrapper.gmk:45: /resources/openjdk-jdk8/build/linux-x86_64-normal-server-slowdebug/hotspot/_hotspot.timestamp] Error 2
+make: *** [/resources/openjdk-jdk8//make/Main.gmk:109: hotspot-only] Error 2
+hotspot/make/linux/Makefile，找到SUPPORTED_OS_VERSION变量定义的地方，在后面追加4%
+SUPPORTED_OS_VERSION = 2.4% 2.5% 2.6% 3% 4% 
+##检查无误，开始编译
+make all CONF=linux-x86_64-normal-server-slowdebug ZIP_DEBUGINFO_FILES=0
+DISABLE_HOTSPOT_OS_VERSION_CHECK=OK
+删除hotspot/make/linux/makefiles/adjust-mflags.sh第67行
+
+SUPPORTED_OS_VERSION = 2.4% 2.5% 2.6% 3% 4%
+export DISABLE_HOTSPOT_OS_VERSION_CHECK=ok
+
+12
+make dist-clean
+bash configure --enable-debug --with-jvm-variants=server
+
+
+
+win
+
+安装Kubernetes Dashboard
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-beta5/aio/deploy/recommended.yaml
+角色权限绑定
+kubectl create clusterrolebinding kubernetes-dashboard --clusterrole=cluster-admin --serviceaccount=kubernetes-dashboard:kubernetes-dashboard
+#获取登录token
+kubectl -n kubernetes-dashboard describe secret $(kubectl -n kubernetes-dashboard get secret | grep admin-user | awk '{print $1}')
+
+kubectl proxy
+
+
+ kubectl get pods --all-namespaces
+ 
+ kubectl port-forward svc/datalookerserver 9999:9999
+ kubectl port-forward redis-9c7654b6c-zqhpf 6379:6379
