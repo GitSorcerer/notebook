@@ -17,3 +17,11 @@ docker login -u 用户名 -p 密码
 docker tag aaa-web:v1 219.139.241.229:8844/aaa/aaa-web:v1
 
 docker push 219.139.241.229:8844/aaa/aaa-web:v1
+
+bulid
+```shell
+FROM openjdk:8-jre-slim
+
+#添加font库 避免Excel导出报错 Debian系列
+RUN apt-get update && apt-get install fontconfig -y
+```
