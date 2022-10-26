@@ -10,6 +10,8 @@ docker save -o openjdk-fontconfig.tar openjdk-fontconfig:8-jre-slim
 
 scp -r /resources/images/openjdk-fontconfig.tar  root@10.10.103.70:/resources/images
 
+docker load < openjdk-fontconfig.tar
+
 
 
 docker login -u 用户名 -p 密码
