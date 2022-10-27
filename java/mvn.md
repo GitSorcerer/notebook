@@ -1,0 +1,2 @@
+*jar包推到私服*
+mvn deploy:deploy-file -DgroupId=com.wpg -DartifactId=wpg-tools-common -Dversion=1.6.4-SNAPSHOT -Dpackaging=jar -Dfile=wpg-tools-common-1.6.4-SNAPSHOT.jar -Durl=https://maven.cloud4water.com/repository/wpg-maven-snapshots/ -DrepositoryId=wpg-maven-snapshots
