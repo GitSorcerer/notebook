@@ -125,3 +125,7 @@ apt-get install libx11-dev libxext-dev libxrender-dev libxrandr-dev libxtst-dev 
 apt-get install libasound2-dev
 apt-get install libffi-dev
 apt-get install autoconf
+
+
+configure: error: Could not find freetype! You might be able to fix this by running 'sudo apt-get install libfreetype6-dev'.
+--with-freetype-include=/usr/include/freetype2 --with-freetype-lib=/usr/lib/x86_64-linux-gnu
