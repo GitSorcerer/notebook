@@ -1,0 +1,245 @@
+properties([
+      [$class: "ParametersDefinitionProperty",
+        parameterDefinitions: [
+          [$class: "StringParameterDefinition", defaultValue: "dev", description: "It is a branch name or tag name", name: "BRANCH"],
+          [$class: "StringParameterDefinition", defaultValue: "营收17dev环境", description: "the agent name which you want to publish", name: "SLAVE_AGENT"],
+          [$class: "StringParameterDefinition", defaultValue: "dev-1.7", description: "the sky env which you want to choose", name: "SKY_ENV"],
+		  [$class: "StringParameterDefinition", defaultValue: "2.0", description: "the image tag name", name: "IMAGE_TAG"],
+		  [$class: "StringParameterDefinition", defaultValue: "water-revenue-dev-132", description: "the image project name", name: "IMAGE_PROJECT"],
+		  [$class: "StringParameterDefinition", defaultValue: "dev", description: "NACOS NAMESPACE", name: "NACOS_NAMESPACE"]
+        ]
+      ]
+    ])
+pipeline {
+    agent {
+            label "${params.SLAVE_AGENT}"
+    }
+    environment {
+		JAR_NAME = "water-revenue-starter"
+		//BRANCH_TAG = "$params.BRANCH"
+		GIT_URL = "http://10.10.102.223/infrastructure/dev-back/water-revenue.git"
+		IMAGE_TAG_ORIGIN = "$params.IMAGE_TAG"
+		EXPOSE_PORT = "11000:11000"
+		//JACOCO_PORT = "6306:6306"
+		DEBUG_PORT = "20102"
+		NACOS_HOST = "10.10.15.132"
+		NACOS_PORT = "8085"
+		NACOS_GROUP = "YX_GROUP_1.7"
+		NACOS_NAMESPACE = "$params.NACOS_NAMESPACE"
+		// -XX:+UseConcMarkSweepGC -XX:+CMSClassUnloadingEnabled -XX:+UseParNewGC 
+		JVM_OPTS = "-Xms512m -Xmx512m -Xmn512m -XX:+UseConcMarkSweepGC -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/home/logs/common/ -Dcom.sun.management.jmxremote.port=9997  -Dcom.sun.management.jmxremote.ssl=false  -Dcom.sun.management.jmxremote.authenticate=false  -Djava.rmi.server.hostname=10.10.102.252"
+		CUSTOM = ""
+		//DOCKER_PATH = "/home/docker_file/file/alarm/Dockerfile"
+		//DOCKER_COMPOSE = "/home/docker_file/file/alarm/docker-compose.yml"
+		DOCKER_PATH = "/home/docker_file/file/Dockerfile"
+		DOCKER_COMPOSE = "/home/docker_file/file/docker-compose.yml"
+		IMAGE_REGISTRY = "10.10.102.75"
+		IMAGE_PROJECT = "$params.IMAGE_PROJECT"
+		SKY_ENV = "$params.SKY_ENV"
+		//JACOCO_PATH="/home/jacoco/org.jacoco.agent-0.8.5-runtime.jar"
+    }
+    
+    stages {
+        
+        
+        stage('git pull') {
+            steps {
+                echo "The current branch or tag is:" + "${params.BRANCH}"
+                checkout([$class: 'GitSCM', 
+                          branches: [[name: "${params.BRANCH}"]], 
+                          doGenerateSubmoduleConfigurations: false, 
+                          extensions: [], 
+                          gitTool: 'Default', 
+                          submoduleCfg: [], 
+                          userRemoteConfigs: [[url: "$GIT_URL",credentialsId: "cwj",]]
+                        ])
+            }
+        }
+        stage('get commit id') {
+            steps {
+              script {
+                COMMITID = sh (script: "git rev-parse --short HEAD", returnStdout: true).trim()
+				env['NEW_IMAGE_TAG'] = "${IMAGE_TAG_ORIGIN}_${COMMITID}"
+				echo "The image tag is:" + "${NEW_IMAGE_TAG}"
+              }   
+            }
+        }
+        stage('ready'){
+            steps{
+                sh '''
+                cp $DOCKER_PATH $WORKSPACE/$JAR_NAME/
+                cp $DOCKER_COMPOSE $WORKSPACE/$JAR_NAME/
+                ls $WORKSPACE/$JAR_NAME -a
+                echo "========================Dockerfile========================"
+                cat $WORKSPACE/$JAR_NAME/Dockerfile 
+                echo "========================Dockerfile end========================"
+                sed -i "s|10.10.102.75/wpg_release/wpg-jar:tag|$IMAGE_REGISTRY/$IMAGE_PROJECT/$JAR_NAME:$NEW_IMAGE_TAG|g" $WORKSPACE/$JAR_NAME/docker-compose.yml
+                sed -i "s|wpg-jar|$JAR_NAME|g" $WORKSPACE/$JAR_NAME/docker-compose.yml
+                if [ -n "$JVM_OPTS" ]; then
+                    echo "JVM_OPTS is $JVM_OPTS"
+                    sed -i "s|jvm_opts_value|$JVM_OPTS|g" $WORKSPACE/$JAR_NAME/docker-compose.yml
+                else
+                    sed -i "s|- JVM_OPTS=jvm_opts_value||g" $WORKSPACE/$JAR_NAME/docker-compose.yml
+                fi
+                if [ -n "$NACOS_HOST" ]; then
+                    echo "NACOS_HOST is $NACOS_HOST"
+                    sed -i "s|nacos_host_value|$NACOS_HOST|g" $WORKSPACE/$JAR_NAME/docker-compose.yml
+                else
+                    sed -i "s|- NACOS_HOST=nacos_host_value||g" $WORKSPACE/$JAR_NAME/docker-compose.yml
+                fi
+                if [ -n "$NACOS_PORT" ]; then
+                    echo "NACOS_PORT is $NACOS_PORT"
+                    sed -i "s|NACOS_PORT=nacos_port_value|NACOS_PORT=$NACOS_PORT|g" $WORKSPACE/$JAR_NAME/docker-compose.yml
+                else
+                    sed -i "s|- NACOS_PORT=nacos_port_value||g" $WORKSPACE/$JAR_NAME/docker-compose.yml
+                fi 
+                if [ -n "$NACOS_GROUP" ]; then
+                    echo "NACOS_GROUP is $NACOS_GROUP"
+                    sed -i "s|DEFAULT_GROUP|$NACOS_GROUP|g" $WORKSPACE/$JAR_NAME/docker-compose.yml
+                else
+                    sed -i "s|- NACOS_GROUP=PLATFORM_COMMON||g" $WORKSPACE/$JAR_NAME/docker-compose.yml
+                fi
+                if [ -n "$EXPOSE_PORT" ]; then
+                    echo "EXPOSE_PORT is $EXPOSE_PORT"
+                    sed -i "s|external:inner|$EXPOSE_PORT|g" $WORKSPACE/$JAR_NAME/docker-compose.yml
+                else
+                    sed -i "s|ports:||g" $WORKSPACE/$JAR_NAME/docker-compose.yml 
+                    sed -i "s|- \\"external:inner\\"||g" $WORKSPACE/$JAR_NAME/docker-compose.yml 
+                fi
+                if [ -n "$NACOS_NAMESPACE" ]; then
+                   echo "NACOS_NAMESPACE is $NACOS_NAMESPACE"
+                    sed -i "s|intergrate|$NACOS_NAMESPACE|g" $WORKSPACE/$JAR_NAME/docker-compose.yml
+                fi
+                
+                
+                echo "========================docker-compose.yml========================"
+                cat $WORKSPACE/$JAR_NAME/docker-compose.yml
+                echo "========================docker-compose.yml end========================"
+                if [ -n "$CUSTOM" ]; then
+                    echo "CUSTOM is $CUSTOM"
+                    array=("${CUSTOM//#/ }")
+                    echo "$array"
+                    for c in ${array[@]}
+                    do
+                        echo "$c" | cut -d "|" -f 1
+                        echo "$c" | cut -d "|" -f 2
+                        old_str=$(echo "$c" | cut -d "|" -f 1)
+                        new_str=$(echo "$c" | cut -d "|" -f 2)
+                        echo "$old_str"
+                        echo "$new_str"
+                        sed -i "s|$old_str|$new_str|g" $WORKSPACE/$JAR_NAME/src/main/resources/bootstrap.yml
+                    done
+                fi
+                echo "========================bootstrap.yml========================"
+                cat $WORKSPACE/$JAR_NAME/src/main/resources/bootstrap.yml
+                echo "========================bootstrap.yml end========================"
+                '''
+            }
+        }
+        
+        stage('maven compile') {
+            steps{
+                sh '''
+                mvn clean install -U -DskipTests -DskipDocker -e
+                '''
+            }
+        }
+        
+        stage('clear'){
+            options{
+              timeout(1)
+              retry(2)
+            }
+            steps{
+                sh'''
+                cd $WORKSPACE/$JAR_NAME
+                ps_count=$(docker ps | grep "$IMAGE_REGISTRY/$IMAGE_PROJECT/$JAR_NAME" | wc -l)
+                if [ $ps_count -gt 0 ];then
+                   docker-compose down
+                fi
+                jar_count=$(docker images | grep "$IMAGE_REGISTRY/$IMAGE_PROJECT/$JAR_NAME" | wc -l)
+                if [ $jar_count -gt 0 ];then
+                   docker images | grep "$IMAGE_REGISTRY/$IMAGE_PROJECT/$JAR_NAME" | awk '{print $3}' | xargs docker rmi -f
+                fi
+                '''
+            }
+        }
+        
+        
+        stage('docker build'){
+            steps{
+                sh '''
+                cd $WORKSPACE/$JAR_NAME
+                SERVER_PORT=$(echo "$EXPOSE_PORT" | cut -d ":" -f 2)
+                JACOCO_PORT=$(echo "$JACOCO_PORT" | cut -d ":" -f 2)
+                docker build -t $IMAGE_REGISTRY/$IMAGE_PROJECT/$JAR_NAME:$NEW_IMAGE_TAG --build-arg nacos_host=$NACOS_HOST --build-arg nacos_port=$NACOS_PORT --build-arg nacos_namespace=$NACOS_NAMESPACE --build-arg profile=dev --build-arg project=$JAR_NAME --build-arg server_port=$SERVER_PORT --no-cache .
+                '''
+            }
+        }
+        
+        
+        stage('docker run'){
+            steps{
+                sh'''
+                cd $WORKSPACE/$JAR_NAME
+                docker-compose up -d
+                '''
+            }
+        }
+        
+//         stage('health check') {       
+// 			steps{
+// 			    script {
+// 				echo "在节点上通过探测端口或url进行健康检查"
+// 				def portStatusValue = sh(script: "sleep 240 && netstat -anp|grep 10102|grep -i 'LISTEN'", returnStatus: true)
+//                 echo "return portStatusValue :${portStatusValue}"
+//                 if(portStatusValue == 0){
+//                       echo "success"
+//                     }
+// 				else{
+// 				    echo "fail"
+// 					sh 'exit 1'
+// 				    }
+// 		        }
+//             }			
+//         }
+        
+        // stage('push image'){
+        //     steps{
+        //         withCredentials([usernamePassword(credentialsId: 'harbor', passwordVariable: 'password', usernameVariable: 'username')]) {
+        //             sh '''
+        //             docker login -u $username -p $password $IMAGE_REGISTRY
+        //             docker push $IMAGE_REGISTRY/$IMAGE_PROJECT/$JAR_NAME:$NEW_IMAGE_TAG
+        //             '''
+        //         }
+        //     }
+        // }
+        
+    }
+//     post {
+//     		failure {
+//     		     dingtalk(
+//     		        robot:'8ea23dd5834364ddf91566646cf20b4d894ada7eaa347ab6c75fa854df449d31',
+//     		        type:'TEXT',
+//     		        //type:'ACTION_CARD',
+//     		        at:['18908633100'],
+//     		        title:'大平台服务报警中心',
+//     			    text:[
+//     				       "服务发布健康检查",
+//                           "- 构建人: $BUILD_USER",
+//     				       "- 环境: ${params.SLAVE_AGENT}",
+//     				       '- 更新状态: 大平台服务报警中心alarm center部署失败!'
+//     				],
+//     			    messageUrl: 'http://10.10.15.132:28080/view/%E5%B9%B3%E5%8F%B0%E6%9E%B6%E6%9E%84_%E5%BC%80%E5%8F%91%E6%B5%8B%E8%AF%95%E9%A2%84%E5%8F%91%E5%B8%83_%E5%90%8E%E7%AB%AF/job/pp_alarm_center_backend_docker/',
+//     		        )
+//     		}
+// 	}
+// 	post {
+//     		success  {
+//     		     sh 'python /home/wx_notes/wechat_alarmcenter_core_test_sucess_notes.py'
+//     		}
+//     		failure  {
+//     		     sh 'python /home/wx_notes/wechat_alarmcenter_core_test_fail_notes.py'
+//     		}
+// 	}
+}

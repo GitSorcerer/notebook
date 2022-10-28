@@ -1,0 +1,17 @@
+version: '3'
+services:
+  water-revenue-starter:
+    image: 10.10.102.75/water-revenue-dev-132/water-revenue-starter:2.0_71e9fb5f
+    network_mode: "host"
+    volumes:
+      - "/home/logs/common:/home/logs/common"
+    ports: 
+      - "11000:11000"
+    restart: unless-stopped
+    environment:
+      - JVM_OPTS=-Xms512m -Xmx512m -Xmn512m -XX:+UseConcMarkSweepGC -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/home/logs/common/ -Dcom.sun.management.jmxremote.port=9997  -Dcom.sun.management.jmxremote.ssl=false  -Dcom.sun.management.jmxremote.authenticate=false  -Djava.rmi.server.hostname=10.10.102.252
+      - NACOS_HOST=10.10.15.132
+      - NACOS_PORT=8085
+      - NACOS_GROUP=YX_GROUP_1.7
+      - NACOS_NAMESPACE=dev
+    container_name: water-revenue-starter
