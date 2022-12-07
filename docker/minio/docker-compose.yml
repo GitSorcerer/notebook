@@ -1,0 +1,15 @@
+version: '3.1'
+services:  
+   minio:
+     image: 10.10.102.75/ops_dev/minio:20210406
+     container_name: minio
+     restart: always
+     ports:
+       - 9500:9000
+     command: server /data  #指定容器中的目录 /data
+     environment:
+       MINIO_ACCESS_KEY: admin
+       MINIO_SECRET_KEY: wpg@2020
+     volumes:
+       - ./data:/data              #映射当前目录下的data目录至容器内/data目录
+       - ./config:/root/.minio/     #映射配置目录

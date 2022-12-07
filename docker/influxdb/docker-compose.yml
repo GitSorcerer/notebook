@@ -1,0 +1,11 @@
+version: '3.0'
+services:
+  influxdb:
+    container_name: influxdb
+    image: influxdb:2.0
+    network_mode: "host"
+    restart: always
+    volumes:
+      - ./conf:/etc/influxdb2:rw
+      - ./data:/var/lib/influxdb2:rw
+      - ./.influxdb2:/root/.influxdb2:rw

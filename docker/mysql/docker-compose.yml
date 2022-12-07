@@ -1,0 +1,16 @@
+version: '3.0'
+services:
+  mysql:
+    container_name: mysql
+    environment:
+      - "MYSQL_ROOT_PASSWORD=root"
+    image: mysql:5.7.38
+    network_mode: "host"
+    privileged: true
+    ports:
+       - 3306:3306/tcp
+    restart: always
+    volumes:
+      - ./data:/var/lib/mysql:rw
+      - ./conf/my.cnf:/etc/my.cnf:rw
+      - ./init:/docker-entrypoint-initdb.d:rw #挂载这个目录是为了启动数据库的时候执行初始化sql语句，需要提前将init.sql文件放到./init目录下，如果不需要执行数据库初始化sql语句请注释本行或者直接删除

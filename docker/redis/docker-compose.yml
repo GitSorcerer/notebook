@@ -1,0 +1,14 @@
+version: '3'
+services:
+  redis:
+    command: redis-server /etc/redis.conf
+    container_name: redis
+    environment:
+      LANG: en_US.UTF-8
+      TZ: Asia/Shanghai
+    image: redis:6.0
+    network_mode: host
+    restart: always
+    volumes:
+    - ./conf/redis.conf:/etc/redis.conf:rw
+    - ./data:/data/redis/:rw
